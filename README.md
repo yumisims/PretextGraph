@@ -1,18 +1,18 @@
 # PretextGraph
-Converts bedgraph formatted coverage data and embeds inside a Pretext contact map.
+Converts bedgraph formatted data and embeds inside a Pretext contact map.
 
 # Usage
-PretextGraph reads bedgraph formatted coverage information from `stdin`, e.g:<br/>
-zcat bedgraph.file.gz | PretextGraph -i input.pretext -n "track name"<br/>
+PretextGraph reads bedgraph formatted data from `stdin`, e.g:<br/>
+zcat bedgraph.file.gz | PretextGraph -i input.pretext -n "graph name"<br/>
 bigWigToBedGraph bigwig.file /dev/stdout | PretextGraph -i input.pretext -n "graph name"
 
 Important: only non-negative integer data is supported.
 
 # Options
 -i input Pretext file, required. Sequence names in the Pretext file must match sequence names in the bedgraph data; although relative sort order is unimportant.<br/>
--n track name, required. A name for the coverage data.<br/>
+-n graph name, required. A name for the graph.<br/>
 
--o output Pretext file, optional. If no output is specified the coverage track will be appended to the input file.<br/>
+-o output Pretext file, optional. If no output is specified the graph data will be appended to the input file.<br/>
 
 # Requirments, running
 4 cpu cores <br/>
