@@ -1,5 +1,19 @@
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/pretext-suite/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/pretextgraph/badges/downloads.svg)](https://anaconda.org/bioconda/pretextgraph)
 # PretextGraph
 Converts bedgraph formatted data and embeds inside a Pretext contact map.
+
+# Bioconda
+All commandline Pretext tools for Unix (Linux and Mac) are available on [bioconda](https://bioconda.github.io/).<br/>
+
+The full suite of Pretext tools can be installed with
+```sh
+> conda install pretext-suite
+```
+Or, just PretextGraph can be installed with
+```sh
+> conda install pretextgraph
+```
 
 # Usage
 PretextGraph reads bedgraph formatted data from `stdin`, e.g:<br/>
