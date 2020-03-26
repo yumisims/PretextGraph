@@ -1,3 +1,4 @@
+[![Travis_CI](https://travis-ci.org/wtsi-hpag/PretextGraph.svg?branch=master)](https://travis-ci.org/github/wtsi-hpag/PretextGraph)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/pretext-suite/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/pretextgraph/badges/downloads.svg)](https://anaconda.org/bioconda/pretextgraph)
 # PretextGraph
