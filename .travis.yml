@@ -5,8 +5,10 @@ jobs:
   - os: osx
 language: c
 install:
-- if [ "$TRAVIS_OS_NAME" = "osx" ]; then export conda_url=https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh; fi
-- if [ "$TRAVIS_OS_NAME" = "linux" ]; then export conda_url=https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh; fi
+- if [ "$TRAVIS_OS_NAME" = "osx" ]; then export conda_url=https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh;
+  fi
+- if [ "$TRAVIS_OS_NAME" = "linux" ]; then export conda_url=https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh;
+  fi
 - wget $conda_url -O miniconda.sh
 - bash miniconda.sh -b -p $HOME/miniconda
 - source "$HOME/miniconda/etc/profile.d/conda.sh"
@@ -16,9 +18,10 @@ install:
 - conda info -a
 - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export toolchain=clangxx_osx-64; fi
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export toolchain=gxx_linux-64; fi
-- conda create -q -n test-environment -c conda-forge -c bioconda -y python=3.8 clang=9 $toolchain make pytest
+- conda create -q -n test-environment -c conda-forge -c bioconda -y python=3.8 clang=9
+  $toolchain make pytest
 - conda activate test-environment
-- ./install
+- "./install"
 script:
 - pytest -v
 before_deploy:
@@ -36,4 +39,6 @@ deploy:
   on:
     tags: true
     condition: "$TRAVIS_OS_NAME = linux"
-
+env:
+  global:
+    secure: 4uOPKpQPXuq7AagJqOgreaqKXScdlvGis/GZY6p8m4a3x90uqYQNFgT/H3OjwHBolTlP6kbRRTWm5sIu8OgYzCeVjYihMD/ub9Tbf1qoEilm9pVMNz1kdy0Ptkpp1V/DHQzRuXO+5d9Gtay1T7qbi5BumbPwhdcWYhay7NO2Rw0fhpFmNx5XgrIi6bPCEsvf4KQG9JQtXjVJGI2nilG9u+Gt1tx+jpt/hVDD9qjPXfc+2zQcdJIoNV3/cIyk9I615NAi/K6oEISYMLGLd3aa4CiZFnEKtpVLyYNnoEUvt8lxx97vz6XNwpyrslzoAGuSOfK3ZmraI/wtJLWRgv+aRunq48NutJz6f7JxOJGaYZiw73BmkzJ9rhtXje6fUqbRMCoo116h1z/+w7+PzyFYMYzSOZlcRRYAg2nlJaADIdkQJF3DhApSJZKgE3nq3PZijX9F47I5oFXopz1gHTMt+sDzF39cVXVd/mLNQs0gFmqMtYivOAwRMVT6wDvyvaL8Tue7v3dcz3c9w1hPOm53x9MY8Hvas5fnkvwMUuamave4i/bQc2I2L/6Kkf9gqCvEGcda6M6bIDpdRL5n+E24jq4PedoDj3Tiv+EBNvwiW0dOT88qKL/AwN7z0keprxCqSJqACpzdviHinz7DonPvRWxvChOMX/BFBq8+6h/RiPU=
