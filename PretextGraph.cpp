@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "Header.h"
 
-#define PretextGraph_Version "PretextGraph Version 0.0.3-dev"
+#define PretextGraph_Version "PretextGraph Version 0.0.4"
 
 global_variable
 u08
