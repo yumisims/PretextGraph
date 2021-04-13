@@ -17,6 +17,4 @@ foreach ext, flag : extensions
                 static_library('deflate_arm' + ext, 'libdeflate/lib/arm/cpu_features.c', c_args : flags)]))
 endforeach
 
-e = executable('PretextGraph', 'wrapper/SIMDExtensionWrapper.cpp', install : true, cpp_args : base_flags + ['-DProgramName=PretextGraph'])
-
-test('Test', e)
+test('Test', executable('PretextGraph', 'wrapper/SIMDExtensionWrapper.cpp', install : true, cpp_args : base_flags + ['-DProgramName=PretextGraph']))
