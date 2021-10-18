@@ -1,7 +1,7 @@
 project('PretextGraph', ['c', 'cpp'],
     license: 'MIT',
     meson_version: '>=0.57.1',
-    version: '0.0.6.dev'
+    version: '0.0.6'
 )
 
 deps = [dependency('threads')]
