@@ -36,6 +36,7 @@ SOFTWARE.
 #include <stdio.h>
 #include <string.h>
 //#include <math.h>
+#include <fcntl.h>
 
 #ifdef _WIN32
 #include <intrin.h>
