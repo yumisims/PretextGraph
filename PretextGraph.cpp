@@ -22,7 +22,9 @@ SOFTWARE.
 
 #include "Header.h"
 
-#define PretextGraph_Version "PretextGraph Version 0.0.5"
+#define String_(x) #x
+#define String(x) String_(x)
+#define PretextGraph_Version "PretextMap Version " String(PV)
 
 global_variable
 u08
@@ -116,6 +118,14 @@ Status_Marco_Expression_Sponge = 0
 { \
 stbsp_snprintf(Message_Buffer, 512, message, ##__VA_ARGS__); \
 stbsp_snprintf(Message_Buffer + 512, 512, "[PretextGraph status] :: %s\n", Message_Buffer); \
+fprintf(stdout, "%s", Message_Buffer + 512); \
+} \
+Status_Marco_Expression_Sponge = 0
+
+#define PrintWarning(message, ...) \
+{ \
+stbsp_snprintf(Message_Buffer, 512, message, ##__VA_ARGS__); \
+stbsp_snprintf(Message_Buffer + 512, 512, "[PretextGraph warning] :: %s\n", Message_Buffer); \
 fprintf(stdout, "%s", Message_Buffer + 512); \
 } \
 Status_Marco_Expression_Sponge = 0
@@ -274,6 +284,10 @@ graph *
 Graph;
 
 global_variable
+volatile u08
+Data_Added = 0;
+
+global_variable
 threadSig
 Number_of_Lines_Read = 0;
 
@@ -289,62 +303,81 @@ ProcessLine(void *in)
     line_buffer *buffer = (line_buffer *)in;
     u08 *line = buffer->line;
 
-    u32 nameBuff[16];
-    line = PushStringIntoIntArray(nameBuff, ArrayCount(nameBuff), line, '\t');
-    contig *cont = 0;
-    if (ContigHashTableLookup(nameBuff, ArrayCount(nameBuff), &cont) && cont)
+    ForLoop(buffer->nLines)
     {
-        u64 prevLength_genome = (u64)((f64)cont->previousCumulativeLength * (f64)Map_Properties->totalGenomeLength);
-
-        u32 len = 0;
-        while (*++line != '\t') ++len;
-        u64 from_genome = (u64)StringToInt(line, len) + prevLength_genome;
-
-        len = 0;
-        while (*++line != '\t') ++len;
-        u64 to_genome = (u64)StringToInt(line, len) + prevLength_genome;
-
-        u64 sectionLength_genome = to_genome - from_genome;
-
-        u32 value;
-        if (StringToInt_Check(line + 1, &value, '\n'))
+        u32 nameBuff[16];
+        line = PushStringIntoIntArray(nameBuff, ArrayCount(nameBuff), line, '\t');
+        contig *cont = 0;
+        if (ContigHashTableLookup(nameBuff, ArrayCount(nameBuff), &cont) && cont)
         {
-            u32 from = (u32)(((f64)from_genome / (f64)Map_Properties->totalGenomeLength) * (f64)sizeGraphArray);
-            u32 to = (u32)(((f64)to_genome / (f64)Map_Properties->totalGenomeLength) * (f64)sizeGraphArray);
+            u64 prevLength_genome = (u64)((f64)cont->previousCumulativeLength * (f64)Map_Properties->totalGenomeLength);
 
-            u64 binSize_ind = ((u64)(from + 1) * binSize_genome) - from_genome;
+            u32 len = 0;
+            while (*++line != '\t') ++len;
+            u64 from_genome = (u64)StringToInt(line, len) + prevLength_genome;
 
-            for (   u32 index = from;
-                    index <= to && index < sizeGraphArray;
-                    ++index )
+            len = 0;
+            while (*++line != '\t') ++len;
+            u64 to_genome = (u64)StringToInt(line, len) + prevLength_genome;
+
+            u64 sectionLength_genome = to_genome - from_genome;
+
+            u32 value;
+            if (StringToInt_Check(line + 1, &value, '\n'))
             {
-                u32 nThisBin = (u32)(Min(binSize_ind, sectionLength_genome));
-                s32 valueToAdd = (s32)(value * nThisBin);
-                if (valueToAdd < 0) valueToAdd = s32_max;
+                Data_Added = 1;
 
-                s32 oldValue = __atomic_fetch_add(Graph->values + index, valueToAdd, 0);
-                if ((s32_max - oldValue) < valueToAdd)
+                u32 from = (u32)(((f64)from_genome / (f64)Map_Properties->totalGenomeLength) * (f64)sizeGraphArray);
+                u32 to = (u32)(((f64)to_genome / (f64)Map_Properties->totalGenomeLength) * (f64)sizeGraphArray);
+
+                u64 binSize_ind = ((u64)(from + 1) * binSize_genome) - from_genome;
+
+                for (   u32 index = from;
+                        index <= to && index < sizeGraphArray;
+                        ++index )
                 {
-                    s32 cap = s32_max;
-                    __atomic_store(Graph->values + index, &cap, 0);
+                    u32 nThisBin = (u32)(Min(binSize_ind, sectionLength_genome));
+                    s32 valueToAdd = (s32)(value * nThisBin);
+                    if (valueToAdd < 0) valueToAdd = s32_max;
+
+                    s32 oldValue = __atomic_fetch_add(Graph->values + index, valueToAdd, 0);
+                    if ((s32_max - oldValue) < valueToAdd)
+                    {
+                        s32 cap = s32_max;
+                        __atomic_store(Graph->values + index, &cap, 0);
+                    }
+
+                    sectionLength_genome -= (u64)nThisBin;
+                    binSize_ind = binSize_genome;
                 }
 
-                sectionLength_genome -= (u64)nThisBin;
-                binSize_ind = binSize_genome;
+                if (!(__atomic_add_fetch(&Number_of_Lines_Read, 1, 0) & ((Pow2(Number_of_Lines_Print_Status_Every_Log2)) - 1)))
+                {
+                    char buff[128];
+                    memset((void *)buff, ' ', 80);
+                    buff[80] = 0;
+                    printf("\r%s", buff);
+
+                    stbsp_snprintf(buff, sizeof(buff), "\r[PretextGraph status] :: %$d bedgraph lines read", Number_of_Lines_Read);
+                    fprintf(stdout, "%s", buff);
+                    fflush(stdout);
+                }
             }
-
-            if (!(__atomic_add_fetch(&Number_of_Lines_Read, 1, 0) & ((Pow2(Number_of_Lines_Print_Status_Every_Log2)) - 1)))
+            else
             {
-                char buff[128];
-                memset((void *)buff, ' ', 80);
-                buff[80] = 0;
-                printf("\r%s", buff);
-
-                stbsp_snprintf(buff, sizeof(buff), "\r[PretextGraph status] :: %$d bedgraph lines read", Number_of_Lines_Read);
-                fprintf(stdout, "%s", buff);
-                fflush(stdout);
+                u32 tmp = 0;
+                while (line[++tmp] != '\n') {}
+                line[tmp] = 0;
+                PrintWarning("Invalid bedgraph integer data: '%s'", line + 1);
+                line[tmp] = '\n';
             }
         }
+        else
+        {
+            PrintWarning("Unknown bedgraph sequence: '%s'", (char *)nameBuff);
+        }
+
+        while (*line++ != '\n') {}
     }
 
     AddLineBufferToQueue(Line_Buffer_Queue, buffer);
@@ -409,39 +442,133 @@ NormaliseGraph_Thread(void *in)
 #endif
 }
 
+struct
+read_buffer
+{
+    u08 *buffer;
+    u64 size;
+};
+
+struct
+read_pool
+{
+    thread_pool *pool;
+    s32 handle;
+    u32 bufferPtr;
+    read_buffer *buffers[2];
+};
+
+global_function
+read_pool *
+CreateReadPool(memory_arena *arena)
+{
+    read_pool *pool = PushStructP(arena, read_pool);
+    pool->pool = ThreadPoolInit(arena, 1);
+
+#define ReadBufferSize MegaByte(16)
+    pool->bufferPtr = 0;
+    pool->buffers[0] = PushStructP(arena, read_buffer);
+    pool->buffers[0]->buffer = PushArrayP(arena, u08, ReadBufferSize);
+    pool->buffers[0]->size = 0;
+    pool->buffers[1] = PushStructP(arena, read_buffer);
+    pool->buffers[1]->buffer = PushArrayP(arena, u08, ReadBufferSize);
+    pool->buffers[1]->size = 0;
+
+    return(pool);
+}
+
 global_function
 void
+FillReadBuffer(void *in)
+{
+    read_pool *pool = (read_pool *)in;
+    read_buffer *buffer = pool->buffers[pool->bufferPtr];
+    buffer->size = (u64)read(pool->handle, buffer->buffer, ReadBufferSize);
+}
+
+global_function
+read_buffer *
+GetNextReadBuffer(read_pool *readPool)
+{
+    FenceIn(ThreadPoolWait(readPool->pool));
+    read_buffer *buffer = readPool->buffers[readPool->bufferPtr];
+    readPool->bufferPtr = (readPool->bufferPtr + 1) & 1;
+    ThreadPoolAddTask(readPool->pool, FillReadBuffer, readPool);
+    return(buffer);
+}
+
+global_variable
+volatile u08
+Global_Error_Flag = 0;
+
+global_function
+    void
 GrabStdIn()
 {
-    line_buffer *buffer = 0;
+    line_buffer *buffer = TakeLineBufferFromQueue_Wait(Line_Buffer_Queue);
     u32 bufferPtr = 0;
-    s32 character;
-#ifdef ReadTmp
-    FILE *file = fopen("tmp.bedgraph", "rb");
-    while ((character = getc(file)) != EOF)
+
+    read_pool *readPool = CreateReadPool(&Working_Set);
+    readPool->handle =
+#ifdef DEBUG
+        open("test_in", O_RDONLY);
 #else
-    while ((character = getchar()) != EOF)
+    STDIN_FILENO;
 #endif
+
+    u08 line[KiloByte(16)];
+    u32 linePtr = 0;
+    u32 numLines = 0;
+    u08 lineTooLong = 0;
+    read_buffer *readBuffer = GetNextReadBuffer(readPool);  
+
+    do
     {
-        if (!buffer) buffer = TakeLineBufferFromQueue_Wait(Line_Buffer_Queue);
-        buffer->line[bufferPtr++] = (u08)character;
-
-        if (bufferPtr == Line_Buffer_Size && character != 10)
+        readBuffer = GetNextReadBuffer(readPool);
+        for (   u64 bufferIndex = 0;
+                bufferIndex < readBuffer->size;
+                ++bufferIndex )
         {
-            while ((character = getchar()) != 10) {}
-            buffer->line[bufferPtr-1] = (u08)character;
-        }
+            u08 character = readBuffer->buffer[bufferIndex];
+            line[linePtr++] = character;
 
-        if (character == 10)
-        {
-            ThreadPoolAddTask(Thread_Pool, ProcessLine, (void *)buffer);
-            buffer = 0;
-            bufferPtr = 0;
+            if (character == '\n')
+            {
+                if (lineTooLong)
+                {
+                    u08 c = line[128];
+                    line[128] = 0;
+                    PrintWarning("Line too long (> %u bytes): '%s...'", sizeof(line), (char *)line);
+                    line[128] = c;
+                }
+                
+                if ((u64)linePtr > (Line_Buffer_Size - bufferPtr))
+                {
+                    buffer->nLines = numLines;
+                    ThreadPoolAddTask(Thread_Pool, ProcessLine, buffer);
+
+                    buffer = TakeLineBufferFromQueue_Wait(Line_Buffer_Queue);
+                    numLines = 0;
+                    bufferPtr = 0;
+                }
+
+                ForLoop(linePtr) buffer->line[bufferPtr++] = line[index];
+                ++numLines;
+
+                linePtr = 0;
+                lineTooLong = 0;
+            }
+
+            if (linePtr == sizeof(line))
+            {
+                lineTooLong = 1;
+                --linePtr;
+            }
         }
-    }
-#ifdef ReadTmp
-    fclose(file);
-#endif
+    } while (readBuffer->size);
+
+    buffer->nLines = numLines;
+    ThreadPoolAddTask(Thread_Pool, ProcessLine, buffer);
 }
 
 struct
@@ -559,7 +686,7 @@ MainArgs
         goto end;
     }
 
-    CreateMemoryArena(Working_Set, MegaByte(2));
+    CreateMemoryArena(Working_Set, MegaByte(128));
     Thread_Pool = ThreadPoolInit(&Working_Set, 4);
 
     if (outputFile)
@@ -722,7 +849,15 @@ MainArgs
                         ThreadPoolAddTask(Thread_Pool, GrabStdIn, 0);
                         ThreadPoolWait(Thread_Pool);
                         fprintf(stdout, "\n");
-                        
+
+                        if (Global_Error_Flag) exit(EXIT_FAILURE);
+
+                        if (!Data_Added)
+                        {
+                            PrintError("No valid bedgraph data processed");
+                            exit(EXIT_FAILURE);
+                        }
+
                         PrintStatus("Normalising graph data...");
                         {
                             normalise_graph_thread_data data[4];

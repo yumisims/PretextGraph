@@ -37,7 +37,7 @@ jobs:
           export toolchain=gxx_linux-64
         fi
         
-        mamba create -q -n test-environment -c conda-forge -c bioconda -y meson clang $toolchain samtools
+        mamba create -q -n test-environment -c conda-forge -c bioconda -y meson clang $toolchain
        
     - name: setup_meson
       run: |
