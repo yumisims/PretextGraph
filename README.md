@@ -18,9 +18,10 @@ Or, just PretextGraph can be installed with
 
 # Usage
 PretextGraph reads bedgraph formatted data from `stdin`, e.g:<br/>
-zcat bedgraph.file.gz | PretextGraph -i input.pretext -n "graph name"<br/>
-bigWigToBedGraph bigwig.file /dev/stdout | PretextGraph -i input.pretext -n "graph name"
-
+```bash
+> zcat bedgraph.file.gz | PretextGraph -i input.pretext -n "graph name"
+> bigWigToBedGraph bigwig.file /dev/stdout | PretextGraph -i input.pretext -n "graph name"
+```
 Important: only non-negative integer data is supported.
 
 # Options
@@ -31,7 +32,7 @@ Important: only non-negative integer data is supported.
 
 # Requirments, running
 4 cpu cores <br/>
-2M RAM <br/>
+128M RAM <br/>
 
 # Viewing graphs
 [PretextView](https://github.com/wtsi-hpag/PretextView) version 0.1.2 or later.
