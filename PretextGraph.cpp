@@ -610,7 +610,7 @@ MainArgs
         printf("\n%s\n\n", PretextGraph_Version);
 
         printf(R"help(  (...bedgraph format |) PretextGraph -i input.pretext -n "graph name"
-                                        (-o output.pretext)
+                                        (-m memory.Mb[128]) (-o output.pretext)
   (< bedgraph format))help");
 
         printf("\n\nPretextGraph --licence    <- view software licence\n");
@@ -641,6 +641,7 @@ MainArgs
     FILE *copyInFile = 0;
     FILE *copyOutFile = 0;
     u32 copyBufferSize = KiloByte(256);
+    u64 workingSetBytes = MegaByte(128);
     copy_file_data copyFileData;
 
     for (   u32 index = 1;
@@ -656,6 +657,18 @@ MainArgs
         {
             ++index;
             PushStringIntoIntArray(nameBuffer, ArrayCount(nameBuffer), (u08 *)ArgBuffer[index]);
+        }
+        else if (AreNullTerminatedStringsEqual((u08 *)ArgBuffer[index], (u08 *)"-m"))
+        {
+            ++index;
+            u32 bufMb;
+            if (!StringToInt_Check((u08 *)ArgBuffer[index], &bufMb) || !bufMb)
+            {
+                PrintError("Cannot parse memory option \'%s\' (positive integer required)", ArgBuffer[index]);
+            } else
+            {
+                workingSetBytes = MegaByte((u64) bufMb);
+            }
         }
         else if (AreNullTerminatedStringsEqual((u08 *)ArgBuffer[index], (u08 *)"-o"))
         {
@@ -686,7 +699,7 @@ MainArgs
         goto end;
     }
 
-    CreateMemoryArena(Working_Set, MegaByte(128));
+    CreateMemoryArena(Working_Set, workingSetBytes);
     Thread_Pool = ThreadPoolInit(&Working_Set, 4);
 
     if (outputFile)
